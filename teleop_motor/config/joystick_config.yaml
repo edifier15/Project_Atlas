@@ -1,0 +1,23 @@
+# Arquivo de configuração para o nosso nó de teleoperação
+joystick_teleop:
+  ros__parameters:
+    # Mapeamento de botões e eixos
+    axis_linear: 1
+    button_mode_select: 4
+    button_preset_A: 0
+    button_preset_B: 1
+    button_preset_X: 2
+    button_preset_Y: 3
+    
+    # Configuração de velocidade (Analógico - sentido único)
+    speed_multiplier: 5.0
+    
+    # Configuração de velocidade (Presets - sentido único)
+    speed_preset_A: 1.0
+    speed_preset_X: 2.0
+    speed_preset_B: 3.5
+    speed_preset_Y: 5.0
+    
+    # Configuração da lógica de controle
+    acceleration: 2.0
+    publish_rate_hz: 20.0

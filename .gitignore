@@ -1,0 +1,19 @@
+# ROS 2 build files
+build/
+install/
+log/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE files
+.vscode/
+.cproject
+.project
+
+# Arduino build files
+*.o
+*.a
+*.elf
+*.bin
