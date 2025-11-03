@@ -40,7 +40,7 @@ def generate_launch_description():
             executable='joy_motor',  # O nome do 'console_script' no setup.py
             name='joystick_teleop',  # O nome que demos no arquivo YAML
             output='screen',
-             <<< CARREGA TODAS AS SUAS CONFIGURAÇÕES (velocidades, botões, etc.)
+            # <<< CARREGA TODAS AS SUAS CONFIGURAÇÕES (velocidades, botões, etc.)
             parameters=[config_filepath] 
         ),
         

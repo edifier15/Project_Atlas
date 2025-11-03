@@ -20,4 +20,4 @@ joystick_teleop:
     
     # Configuração da lógica de controle
     acceleration: 2.0
-    publish_rate_hz: 20.0
+    publish_rate_hz: 5.0
