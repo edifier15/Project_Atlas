@@ -11,6 +11,12 @@ O tutorial se divide em três etapas, 1° Clonar esse repositorio, 2° que é a 
 
 2° Hora de instalar o micro-ros, acesse o site https://github.com/hippo5329/micro_ros_arduino_examples_platformio/wiki , navegue até a parte onde contém "Build micro-ROS agent" (lembre-se, não criar a pasta uros_ws pois você vai fazer o clone do git dentro do "Project_Atlas/src") .
 
+Lembre-se de compilar no final.
+
 ######################################## 3° Etapa, Preparar o ambiente do IDE ARDUINO #################################################
 Instale a IDE do ARDUINO acessando o site https://www.arduino.cc/en/software/ e siga o tutorial https://github.com/micro-ROS/micro_ros_arduino/tree/humble?tab=readme-ov-file precisa somente da etapa "How to use the precompiled library", lembre-se quando instalar a placa esp32 através da board manager, selecionar a versão v2.0.2 que é a compativel com o micro-ros
+Após isso, faça o upload na placa com o firmware do projeto, deve funcionar sem erros, você pode usar tanto via cabo, como via wifi, bastante comentar a linha responsavel pela usb e descomentar a linha responsavel pelo wifi, e no arquivo "robot_completo.launch", fazer o mesmo.
+
+####################################### Teste ####################################################
+Execute o comando ros2 launch teleop_motor robot_completo.launch.py , e logo em seguida ligue o esp32, o terminal deve mostrar que o esp se conectou e esta comunicando
 
