@@ -18,5 +18,6 @@ Instale a IDE do ARDUINO acessando o site https://www.arduino.cc/en/software/ e 
 Após isso, faça o upload na placa com o firmware do projeto, deve funcionar sem erros, você pode usar tanto via cabo, como via wifi, bastante comentar a linha responsavel pela usb e descomentar a linha responsavel pelo wifi, e no arquivo "robot_completo.launch", fazer o mesmo.
 
 ####################################### Teste ####################################################
-Execute o comando ros2 launch teleop_motor robot_completo.launch.py , e logo em seguida ligue o esp32, o terminal deve mostrar que o esp se conectou e esta comunicando
+Execute o comando ros2 launch teleop_motor robot_completo.launch.py , e logo em seguida ligue o esp32, o terminal deve mostrar que o esp se conectou e esta comunicando, em outro terminal abra o rviz2 e configure como na imagem abaixo, se atentando principalmente para fixed_frame e realibity policy.
 
+<img width="1569" height="852" alt="image" src="https://github.com/user-attachments/assets/3ba9946f-c6a0-4f4c-b435-ae76293e7d00" />
