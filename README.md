@@ -11,6 +11,8 @@ O tutorial se divide em três etapas, 1° Clonar esse repositorio, 2° que é a 
 
 2° Hora de instalar o micro-ros, acesse o site https://github.com/hippo5329/micro_ros_arduino_examples_platformio/wiki , navegue até a parte onde contém "Build micro-ROS agent" (lembre-se, não criar a pasta uros_ws pois você vai fazer o clone do git dentro do "Project_Atlas/src") .
 
+3° Instalar a dependencias (sudo apt-get install ros-jazzy-pointcloud-to-laserscan , sudo apt-get install ros-jazzy-joy-linux, sudo apt-get install ros-jazzy-tf2-ros)
+
 Lembre-se de compilar no final.
 
 ######################################## 3° Etapa, Preparar o ambiente do IDE ARDUINO #################################################
