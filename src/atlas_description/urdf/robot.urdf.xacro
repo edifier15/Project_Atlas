@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<robot name="atlas_robot" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="0.4 0.3 0.1"/> </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <link name="laser_frame">
+    <visual>
+      <geometry>
+        <cylinder radius="0.03" length="0.05"/>
+      </geometry>
+      <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="laser_frame"/>
+    <origin xyz="0.15 0.0 0.10" rpy="0 0 0"/> 
+  </joint>
+
+</robot>

@@ -2,111 +2,102 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Int32 
 
 class JoystickMotorController(Node):
     def __init__(self):
         super().__init__('joystick_motor_controller')
 
-        # --- Parâmetros Configuráveis ---
-        # Mapeamento
-        self.declare_parameter('axis_linear', 1)
-        self.declare_parameter('button_mode_select', 4)
-        self.declare_parameter('button_preset_A', 0)
-        self.declare_parameter('button_preset_B', 1)
-        self.declare_parameter('button_preset_X', 2)
-        self.declare_parameter('button_preset_Y', 3)
+        # --- Parâmetros ---
+        self.declare_parameter('axis_linear', 1) 
+        self.declare_parameter('axis_angular', 3) 
+        self.declare_parameter('button_blade', 0) 
         
-        # Velocidades (Presets para frente)
-        self.declare_parameter('speed_multiplier', 5.0)
-        self.declare_parameter('speed_preset_A', 3.5)
-        self.declare_parameter('speed_preset_X', 4.0)
-        self.declare_parameter('speed_preset_B', 4.5)
-        self.declare_parameter('speed_preset_Y', 5.0)
+        self.declare_parameter('max_speed_linear', 0.5)
+        self.declare_parameter('max_speed_angular', 1.0)
         
-        # <<< NOVO: Parâmetro da Rampa de Aceleração >>>
-        # Define o quão rápido a velocidade muda (em rad/s por segundo)
         self.declare_parameter('acceleration', 1.0) 
-        
-        # Parâmetro para a lógica de 20Hz
-        self.declare_parameter('publish_rate_hz', 5.0)
+        # Mantive seus 2.0Hz para teste, mas para dirigir suave o ideal é ~10.0Hz
+        self.declare_parameter('publish_rate_hz', 20.0) 
 
         # --- Variáveis de Estado ---
-        self.control_mode = 'ANALOG'
-        self.mode_button_last_state = 0
-        self.target_speed = 0.0      # A velocidade que DESEJAMOS atingir
-        self.current_speed = 0.0     # A velocidade ATUAL que estamos enviando
+        self.target_linear = 0.0
+        self.current_linear = 0.0
         
-        # --- Subscriber e Publisher ---
-        self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 10)
+        self.target_angular = 0.0
+        self.current_angular = 0.0
+        
+        # Variável para guardar o estado da lâmina
+        self.blade_state = 0 
+
+        # --- Publishers e Subscribers ---
+        self.pub_cmd_vel = self.create_publisher(Twist, 'cmd_vel', 10)
+        self.pub_blade = self.create_publisher(Int32, 'cmd_blade', 10)
+        
         self.subscription = self.create_subscription(Joy, 'joy', self.joy_callback, 10)
 
-        # --- O Timer agora é nosso loop de controle principal ---
+        # Loop Principal
         self.publish_period = 1.0 / self.get_parameter('publish_rate_hz').value
         self.control_timer = self.create_timer(self.publish_period, self.control_loop_callback)
 
-        self.get_logger().info("Joystick controller with ACCELERATION RAMP started.")
-
+        self.get_logger().info("Joystick Controller OTIMIZADO iniciado.")
 
     def joy_callback(self, msg):
-        """Esta função agora apenas define a VELOCIDADE ALVO (target_speed)."""
+        """
+        Função Leve: Apenas lê os inputs e salva em variáveis.
+        NÃO PUBLICA NADA AQUI.
+        """
         
-        mode_select_button = self.get_parameter('button_mode_select').value
-        
-        # Lógica para Trocar de Modo
-        if msg.buttons[mode_select_button] == 1 and self.mode_button_last_state == 0:
-            if self.control_mode == 'ANALOG': self.control_mode = 'PRESET'
-            else: self.control_mode = 'ANALOG'
-            self.get_logger().info(f"Switched to '{self.control_mode}' mode.")
-        self.mode_button_last_state = msg.buttons[mode_select_button]
+        # 1. Leitura dos Eixos
+        axis_lin_idx = self.get_parameter('axis_linear').value
+        axis_ang_idx = self.get_parameter('axis_angular').value
+        max_lin = self.get_parameter('max_speed_linear').value
+        max_ang = self.get_parameter('max_speed_angular').value
 
-        # Determina a velocidade alvo com base no modo
-        temp_target = 0.0
-        if self.control_mode == 'ANALOG':
-            axis_linear = self.get_parameter('axis_linear').value
-            speed_multiplier = self.get_parameter('speed_multiplier').value
-            joystick_value = msg.axes[axis_linear]
-            temp_target = max(0.0, joystick_value) * speed_multiplier
-        
-        elif self.control_mode == 'PRESET':
-            # Se nenhum botão de preset for pressionado, a velocidade alvo é 0
-            if msg.buttons[self.get_parameter('button_preset_A').value] == 1:
-                temp_target = self.get_parameter('speed_preset_A').value
-            elif msg.buttons[self.get_parameter('button_preset_X').value] == 1:
-                temp_target = self.get_parameter('speed_preset_X').value
-            elif msg.buttons[self.get_parameter('button_preset_B').value] == 1:
-                temp_target = self.get_parameter('speed_preset_B').value
-            elif msg.buttons[self.get_parameter('button_preset_Y').value] == 1:
-                temp_target = self.get_parameter('speed_preset_Y').value
-        
-        self.target_speed = temp_target
+        self.target_linear = msg.axes[axis_lin_idx] * max_lin
+        self.target_angular = msg.axes[axis_ang_idx] * max_ang
 
+        # 2. Leitura do Botão da Lâmina
+        btn_blade_idx = self.get_parameter('button_blade').value
+        
+        if msg.buttons[btn_blade_idx] == 1:
+            self.blade_state = 100
+        else:
+            self.blade_state = 0
+            
     def control_loop_callback(self):
-        """Este loop roda a 20Hz e ajusta a velocidade gradativamente."""
+        """
+        Função Rítmica: Roda a 2Hz (ou o que configurar).
+        Processa a rampa e publica TODOS os comandos.
+        """
         
-        # Pega o valor da aceleração do parâmetro
+        # --- A. Lógica da Rampa (Motion) ---
         acceleration = self.get_parameter('acceleration').value
-        # Calcula o quanto a velocidade pode mudar neste ciclo (neste "tick" de 1/20 de segundo)
-        speed_step = acceleration * self.publish_period
-        if self.control_mode == 'ANALOG':
-            self.current_speed = self.target_speed
-        # Compara a velocidade atual com a alvo e ajusta
-        elif self.current_speed < self.target_speed:
-            self.current_speed += speed_step
-            # Garante que não ultrapassemos o alvo
-            if self.current_speed > self.target_speed:
-                self.current_speed = self.target_speed
-        
-        elif self.current_speed > self.target_speed:
-            self.current_speed -= speed_step
-            # Garante que não fiquemos abaixo do alvo
-            if self.current_speed < self.target_speed:
-                self.current_speed = self.target_speed
+        step = acceleration * self.publish_period
 
-        # Publica a velocidade ATUAL, que muda gradativamente
+        # Rampa Linear
+        if self.current_linear < self.target_linear:
+            self.current_linear = min(self.current_linear + step, self.target_linear)
+        elif self.current_linear > self.target_linear:
+            self.current_linear = max(self.current_linear - step, self.target_linear)
+
+        # Rampa Angular
+        if self.current_angular < self.target_angular:
+            self.current_angular = min(self.current_angular + step, self.target_angular)
+        elif self.current_angular > self.target_angular:
+            self.current_angular = max(self.current_angular - step, self.target_angular)
+
+        # Publica CMD_VEL
         twist_msg = Twist()
-        twist_msg.angular.z = self.current_speed
-        self.publisher_.publish(twist_msg)
-
+        twist_msg.linear.x = self.current_linear
+        twist_msg.angular.z = self.current_angular
+        self.pub_cmd_vel.publish(twist_msg)
+        
+        # --- B. Lógica da Lâmina ---
+        # Publica CMD_BLADE no mesmo ritmo
+        blade_msg = Int32()
+        blade_msg.data = self.blade_state
+        self.pub_blade.publish(blade_msg)
 
 def main(args=None):
     rclpy.init(args=args)
